@@ -96,7 +96,18 @@ function initializeSocketEvents() {
             audioPlayer.play();
         } else if (data.type === 'bgm') {
             audioPlayer.src = `audio/BGM1.mp3`;
-            audioPlayer.play();
+            const receivedDate = new Date(data.time);
+            const now = new Date();
+            // 指定時刻までのミリ秒数を計算
+            const delay = receivedDate.getTime() - now.getTime();
+            if (delay > 0) {
+                setTimeout(() => {
+                    audioPlayer.play();
+                }, delay);
+                console.log(`指定時刻まであと ${delay} ミリ秒です。`);
+            } else {
+                console.log("指定時刻は既に過ぎています。");
+            }
         }
     });
 
