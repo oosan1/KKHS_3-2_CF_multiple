@@ -90,16 +90,28 @@ function initializeSocketEvents() {
     });
 
     // 機能③: 音声再生
-    socket.on('command-play-audio', (data) => {
+    socket.on('command-play-audio', playaudio);
+    async function playaudio(data) {
         if (data.type === 'specific' && data.number == myNumber) {
             audioPlayer.src = `audio/${data.number}_audio.wav`;
             audioPlayer.play();
         } else if (data.type === 'bgm') {
             audioPlayer.src = `audio/BGM1.mp3`;
             const receivedDate = new Date(data.time);
-            const now = new Date();
+            const response = await fetch('/');
+            const serverDateString = response.headers.get('Date');
+            if (!serverDateString) {
+                console.error("HTTPレスポンスヘッダーに 'Date' フィールドが見つかりませんでした。");
+                return;
+            }
+            const serverTime = new Date(serverDateString);
+            const clientTime = new Date();
+            const timeDifference = serverTime.getTime() - clientTime.getTime();
+            const targetTimeInMs = receivedDate.getTime();
+            const correctedTargetTimeInMs = targetTimeInMs - timeDifference;
+            const correctedTargetDate = new Date(correctedTargetTimeInMs);
             // 指定時刻までのミリ秒数を計算
-            const delay = receivedDate.getTime() - now.getTime();
+            const delay = correctedTargetDate.getTime() - new Date().getTime();
             if (delay > 0) {
                 setTimeout(() => {
                     audioPlayer.play();
@@ -109,7 +121,7 @@ function initializeSocketEvents() {
                 console.log("指定時刻は既に過ぎています。");
             }
         }
-    });
+    }
 
     socket.on('command-set-volume', (volume) => {
         audioPlayer.volume = volume;
