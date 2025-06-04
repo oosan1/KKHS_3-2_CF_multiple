@@ -92,7 +92,7 @@ function initializeSocketEvents() {
     // 機能③: 音声再生
     socket.on('command-play-audio', (data) => {
         if (data.type === 'specific' && data.number == myNumber) {
-            audioPlayer.src = `audio/${data.number}_audio.mp3`;
+            audioPlayer.src = `audio/${data.number}_audio.wav`;
             audioPlayer.play();
         } else if (data.type === 'bgm') {
             audioPlayer.src = `audio/BGM1.mp3`;
