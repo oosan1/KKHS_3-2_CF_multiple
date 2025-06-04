@@ -8,6 +8,27 @@ const numberSelect = document.getElementById('number-select');
 const connectBtn = document.getElementById('connect-btn');
 const audioPlayer = document.getElementById('audio-player');
 const socketIoUrlInput = document.getElementById('server-url-input');
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let audioBuffers = {}; // 音声ファイルのバッファを格納
+let globalGainNode = audioContext.createGain(); // グローバルな音量ノード
+globalGainNode.connect(audioContext.destination);
+let lastPlayingSource = null; // 再生中止用
+
+// すべての音声ファイルを読み込む
+async function loadAudioFiles() {
+    const audioFileNames = [];
+    for (let i = 1; i <= 30; i++) {
+        audioFileNames.push(`${i}_audio.wav`);
+    }
+    audioFileNames.push('BGM1.mp3');
+
+    for (const fileName of audioFileNames) {
+        const response = await fetch(`audio/${fileName}`);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        audioBuffers[fileName] = audioBuffer;
+    }
+}
 
 const urlParams = new URLSearchParams(window.location.search);
 const queryUrl = urlParams.get('serverUrl');
@@ -38,9 +59,19 @@ for (let i = 1; i <= 30; i++) {
 }
 
 // 接続ボタン
-connectBtn.addEventListener('click', () => {
+connectBtn.addEventListener('click', async () => {
     myNumber = numberSelect.value;
     const serverUrl = socketIoUrlInput.value;
+    // iOS対策：ユーザー操作時に AudioContext を resume
+    if (audioContext.state === 'suspended') {
+        try {
+            await audioContext.resume();
+            console.log("AudioContext resumed successfully.");
+        } catch (e) {
+            console.error("AudioContext resume failed:", e);
+        }
+    }
+    await loadAudioFiles(); // ここで読み込む
     if (socket) {
         socket.disconnect(); // 既存の接続を切断
     }
@@ -49,6 +80,25 @@ connectBtn.addEventListener('click', () => {
     initialSetup.classList.add('hidden');
     showWaitingScreen();
 });
+
+function playAudioBuffer(fileName, when = 0, volume = 1.0) {
+    const buffer = audioBuffers[fileName];
+    if (!buffer) {
+        console.warn(`音声バッファが見つかりません: ${fileName}`);
+        return;
+    }
+
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+
+    source.connect(globalGainNode);
+    console.log(audioContext.currentTime + when);
+    source.start(audioContext.currentTime + when);
+
+    // 停止時に参照するため保持（複数同時再生も考慮するなら配列で管理）
+    lastPlayingSource = source;
+}
+
 
 // --- 画面表示制御 ---
 function hideAllScreens() {
@@ -63,7 +113,6 @@ function showWaitingScreen() {
     waitingScreen.classList.remove('hidden');
     document.body.innerHTML = ''; // 他の要素をクリア
     document.body.appendChild(waitingScreen);
-    document.body.appendChild(audioPlayer); // audio要素は残す
 }
 
 
@@ -93,10 +142,8 @@ function initializeSocketEvents() {
     socket.on('command-play-audio', playaudio);
     async function playaudio(data) {
         if (data.type === 'specific' && data.number == myNumber) {
-            audioPlayer.src = `audio/${data.number}_audio.wav`;
-            audioPlayer.play();
+            playAudioBuffer(`${data.number}_audio.wav`);
         } else if (data.type === 'bgm') {
-            audioPlayer.src = `audio/BGM1.mp3`;
             const receivedDate = new Date(data.time);
             const response = await fetch('/');
             const serverDateString = response.headers.get('Date');
@@ -113,9 +160,7 @@ function initializeSocketEvents() {
             // 指定時刻までのミリ秒数を計算
             const delay = correctedTargetDate.getTime() - new Date().getTime();
             if (delay > 0) {
-                setTimeout(() => {
-                    audioPlayer.play();
-                }, delay);
+                playAudioBuffer('BGM1.mp3', delay / 1000);
                 console.log(`指定時刻まであと ${delay} ミリ秒です。`);
             } else {
                 console.log("指定時刻は既に過ぎています。");
@@ -124,12 +169,19 @@ function initializeSocketEvents() {
     }
 
     socket.on('command-set-volume', (volume) => {
-        audioPlayer.volume = volume;
+        globalGainNode.gain.value = volume;
+        console.log(`音量を ${volume} に変更しました。`);
     });
 
     socket.on('command-stop-audio', () => {
-        audioPlayer.pause();
-        audioPlayer.currentTime = 0;
+        if (lastPlayingSource) {
+            try {
+                lastPlayingSource.stop();
+            } catch (e) {
+                console.warn("再生停止中にエラー:", e);
+            }
+            lastPlayingSource = null;
+        }
     });
 
 
