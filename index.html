@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client A</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="initial-setup">
+        <h1>番号を選択してください</h1>
+        <input type="text" id="server-url-input" placeholder="サーバーURLを入力してください">
+        <select id="number-select"></select>
+        <button id="connect-btn">接続</button>
+    </div>
+    <div id="waiting-screen" class="hidden">
+        <div class="message">待機中...</div>
+    </div>
+    
+    <div id="number-display" class="hidden"></div>
+
+    <div id="shooting-mode" class="hidden">
+        <video id="video-feed" autoplay playsinline></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        <div class="shutter-overlay">
+            <button id="capture-btn">撮影</button>
+            <p>残り撮影枚数: <span id="remaining-shots">0</span></p>
+        </div>
+    </div>
+
+    <audio id="audio-player"></audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.8.1/socket.io.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

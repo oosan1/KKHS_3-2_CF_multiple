@@ -1,0 +1,78 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: sans-serif;
+    background-color: #000;
+    color: #fff;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 初期画面 */
+#initial-setup {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+#number-select, #connect-btn, #server-url-input { /* #server-url-input を追加 */
+    padding: 10px;
+    font-size: 1.2em;
+    width: 80%; /* 幅を調整 */
+    max-width: 400px; /* 最大幅を設定 */
+    margin: 0 auto; /* 中央寄せ */
+}
+
+/* 待機画面 */
+#waiting-screen .message {
+    font-size: 3em;
+    font-weight: bold;
+}
+
+/* 番号表示 */
+#number-display {
+    font-size: 20vw;
+    font-weight: bold;
+}
+
+/* 撮影モード */
+#shooting-mode {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+#video-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.shutter-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0,0,0,0.5);
+    padding: 15px;
+    border-radius: 10px;
+    color: white;
+}
+#capture-btn {
+    padding: 15px 30px;
+    font-size: 1.5em;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 3px solid white;
+    background-color: red;
+}
+#capture-btn:disabled {
+    background-color: #888;
+    cursor: not-allowed;
+}
